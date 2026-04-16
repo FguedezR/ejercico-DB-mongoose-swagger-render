@@ -1,21 +1,33 @@
+require("dotenv").config();
 const express = require("express");
-const app = express();
-const PORT = 8080;
-const { dbConnection } = require("./config/config");
-const routes = require("./routes");
-app.use(express.json());
 const swaggerUI = require("swagger-ui-express");
 const swaggerJsDoc = require("swagger-jsdoc");
+const { dbConnection } = require("./config/config");
 const swaggerOptions = require("./docs/index");
+const taskRoutes = require("./routes/tasks");
 
-app.use("/", routes);
+const app = express();
+const PORT = process.env.PORT || 8080;
 
-const specs = swaggerJsDoc(swaggerOptions);
-
-app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs));
-
+// conexión a bbdd
 dbConnection();
 
-app.listen(PORT, () =>
-  console.log(`Server started on port http://localhost:${PORT}`),
-);
+// middlewares
+app.use(express.json());
+
+// swagger
+try {
+  const specs = swaggerJsDoc(swaggerOptions);
+  app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs));
+} catch (error) {
+  console.error("Error al configurar Swagger:", error);
+}
+
+// rutas
+app.use("/", taskRoutes);
+
+// arranque
+app.listen(PORT, () => {
+  console.log(`servidor listo en: http://localhost:${PORT}`);
+  console.log(`documentación en: http://localhost:${PORT}/api-docs`);
+});
